@@ -1,0 +1,47 @@
+name: Build ISO
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build container image
+        run: docker build -t lightos:latest .
+
+      - name: Create output directory
+        run: mkdir -p output
+
+      - name: Build ISO
+        run: |
+          docker run --rm -it \
+            --privileged \
+            -v ${{ github.workspace }}/disk_config:/disk_config \
+            -v ${{ github.workspace }}/output:/output \
+            quay.io/centos-bootc/bootc-image-builder:latest \
+            --type iso \
+            --local \
+            lightos:latest
+        env:
+          DOCKER_BUILDKIT: 1
+
+      - name: Upload ISO artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lightos-iso
+          path: output/*.iso
+          retention-days: 7
