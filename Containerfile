@@ -1,6 +1,6 @@
 # LIGHTOS - Bootc Image
 # Base: Fedora Bootc 42 + Nvidia + Hyprland + Gaming + Dev
-# Build: docker -H tcp://192.168.1.145:2375 build ...
+# Build: docker build -t lightos:latest .
 
 FROM quay.io/fedora/fedora-bootc:42
 
