@@ -1,0 +1,72 @@
+name: Build LIGHTOS Disk Image
+
+on:
+  workflow_dispatch:
+    inputs:
+      image-tag:
+        description: "Image tag to build disk from"
+        required: false
+        default: "latest"
+      disk-type:
+        description: "Disk image type"
+        required: false
+        default: "iso"
+        type: choice
+        options:
+          - iso
+          - qcow2
+          - raw
+
+env:
+  IMAGE_REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  DEFAULT_TAG: ${{ inputs.image-tag || 'latest' }}
+  DISK_TYPE: ${{ inputs.disk-type || 'iso' }}
+  BIB_IMAGE: quay.io/centos-bootc/bootc-image-builder:latest
+
+permissions:
+  contents: read
+  packages: read
+
+jobs:
+  build-disk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        uses: redhat-actions/podman-login@v1
+        with:
+          registry: ${{ env.IMAGE_REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build disk image
+        run: |
+          podman run --rm -it \
+            --privileged \
+            -v ./disk_config:/disk_config:Z \
+            -v ./output:/output:Z \
+            ${{ env.BIB_IMAGE }} \
+            --type ${{ env.DISK_TYPE }} \
+            ${{ env.IMAGE_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.DEFAULT_TAG }}
+
+      - name: Upload disk image artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: lightos-${{ env.DISK_TYPE }}
+          path: ./output/${{ env.DISK_TYPE }}/
+          retention-days: 7
+
+      - name: Upload to S3 (optional)
+        if: ${{ secrets.S3_BUCKET_NAME != '' }}
+        run: |
+          sudo apt-get update && sudo apt-get install -y rclone
+          rclone config create s3remote s3 \
+            provider ${{ secrets.S3_PROVIDER }} \
+            access_key_id ${{ secrets.S3_ACCESS_KEY_ID }} \
+            secret_access_key ${{ secrets.S3_SECRET_ACCESS_KEY }} \
+            region ${{ secrets.S3_REGION }} \
+            endpoint ${{ secrets.S3_ENDPOINT }}
+          rclone copy ./output/${{ env.DISK_TYPE }}/ s3remote:${{ secrets.S3_BUCKET_NAME }}/lightos/${{ env.DEFAULT_TAG }}/

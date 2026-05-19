@@ -1,0 +1,4 @@
+-----BEGIN PUBLIC KEY-----
+# Sostituisci con la tua chiave pubblica cosign dopo aver generato la coppia
+# cosign generate-key-pair
+-----END PUBLIC KEY-----

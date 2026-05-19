@@ -1,0 +1,9 @@
+# LIGHTOS ISO disk configuration
+# Per build locale: docker build -t lightos:latest .
+# Per build ISO: just build-iso
+
+[[customizations.user]]
+name = "user"
+password = ""
+key = ""
+groups = ["wheel"]
