@@ -21,7 +21,9 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build container image
-        run: docker build --no-cache -t lightos:latest .
+        run: |
+          docker system prune -af 2>/dev/null || true
+          docker build --no-cache -t lightos:iso-build .
 
       - name: Create output directory
         run: mkdir -p output
@@ -35,7 +37,7 @@ jobs:
             quay.io/centos-bootc/bootc-image-builder:latest \
             --type iso \
             --local \
-            lightos:latest
+            lightos:iso-build
         env:
           DOCKER_BUILDKIT: 1
 
