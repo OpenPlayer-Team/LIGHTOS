@@ -24,13 +24,15 @@ jobs:
         run: |
           docker system prune -af 2>/dev/null || true
           docker build --no-cache -t lightos:iso-build .
+        env:
+          DOCKER_BUILDKIT: 1
 
       - name: Create output directory
         run: mkdir -p output
 
       - name: Build ISO
         run: |
-          docker run --rm -it \
+          docker run --rm \
             --privileged \
             -v ${{ github.workspace }}/disk_config:/disk_config \
             -v ${{ github.workspace }}/output:/output \
@@ -38,8 +40,6 @@ jobs:
             --type iso \
             --local \
             lightos:iso-build
-        env:
-          DOCKER_BUILDKIT: 1
 
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4
