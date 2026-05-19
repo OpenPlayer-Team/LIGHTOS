@@ -8,5 +8,4 @@ FROM quay.io/fedora/fedora-bootc:42
 COPY build_files/build.sh /tmp/build.sh
 RUN chmod +x /tmp/build.sh && /tmp/build.sh && rm -f /tmp/build.sh
 
-# Copia file di configurazione aggiuntivi
-COPY build_files/etc/ /etc/
+
