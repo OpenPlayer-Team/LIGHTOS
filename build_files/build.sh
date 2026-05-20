@@ -20,8 +20,18 @@ dnf install -y \
     https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
     https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
 
-# Hyprland COPR repo
-dnf copr enable -y solopasha/hyprland || true
+# Hyprland - available in Fedora 42 repos
+if dnf list hyprland &>/dev/null; then
+    :  # already available
+else
+    # Try to enable COPR if available
+    if command -v dnf5 &>/dev/null; then
+        dnf5 -y install 'dnf5-command(copr)' 2>/dev/null || true
+        dnf5 copr enable -y solopasha/hyprland 2>/dev/null || true
+    else
+        dnf copr enable -y solopasha/hyprland 2>/dev/null || true
+    fi
+fi
 
 # Aggiorna cache dopo nuovi repo
 dnf makecache
@@ -42,7 +52,8 @@ dnf install -y \
     nvidia-container-toolkit \
     nvidia-persistenced
 
-systemctl enable nvidia-persistenced.service
+# Enable nvidia-persistenced service (systemd link)
+[ -f "/usr/lib/systemd/system/nvidia-persistenced.service" ] && ln -sf "/usr/lib/systemd/system/nvidia-persistenced.service" "/etc/systemd/system/multi-user.target.wants/nvidia-persistenced.service" 2>/dev/null || true
 
 # ──────────────────────────────────────────────
 # 3. HYPRLAND & TILING WM ECOSYSTEM
@@ -244,38 +255,40 @@ dnf install -y \
 echo ">>> Installazione Sistema e Utilità..."
 
 dnf install -y \
-    NetworkManager \
-    NetworkManager-wifi \
-    NetworkManager-bluetooth \
-    bluez \
-    blueman \
-    firewalld \
-    ufw \
-    chrony \
-    dnf-automatic \
-    rpmconf \
-    flatpak \
-    snapd \
-    fwupd \
-    tlp \
-    tlp-rdw \
-    power-profiles-daemon \
-    thermald \
-    smartmontools \
-    nvme-cli \
-    usbutils \
-    pciutils \
-    lshw \
-    inotify-tools \
-    xdg-user-dirs \
-    xdg-utils \
-    polkit \
-    dbus-tools \
-    systemd-container \
-    systemd-networkd || true
+     NetworkManager \
+     NetworkManager-wifi \
+     NetworkManager-bluetooth \
+     bluez \
+     blueman \
+     firewalld \
+     ufw \
+     chrony \
+     dnf-automatic \
+     rpmconf \
+     flatpak \
+     snapd \
+     fwupd \
+     tlp \
+     tlp-rdw \
+     power-profiles-daemon \
+     thermald \
+     smartmontools \
+     nvme-cli \
+     usbutils \
+     pciutils \
+     lshw \
+     inotify-tools \
+     xdg-user-dirs \
+     xdg-utils \
+     polkit \
+     dbus-tools \
+     systemd-container \
+     systemd-networkd \
+     memtest86+ || true
 
-# Abilita servizi di sistema
-systemctl enable \
+# Abilita servizi di sistema (create symlinks manually for bootc)
+mkdir -p /etc/systemd/system/multi-user.target.wants
+for svc in \
     dnf-automatic-install.timer \
     fstrim.timer \
     bluetooth.service \
@@ -285,7 +298,13 @@ systemctl enable \
     thermald.service \
     fwupd.service \
     snapd.socket \
-    snapd.service 2>/dev/null || true
+    snapd.service \
+    akmods.service; do
+    [ -f "/usr/lib/systemd/system/$svc" ] && ln -sf "/usr/lib/systemd/system/$svc" "/etc/systemd/system/multi-user.target.wants/$svc" 2>/dev/null || true
+done
+
+# Configure GRUB to include memtest86+
+grub2-mkconfig -o /boot/grub2/grub.cfg 2>/dev/null || true
 
 # ──────────────────────────────────────────────
 # 10. FONTS
@@ -314,6 +333,7 @@ echo ">>> Configurazione Flathub e Flatpak apps..."
 
 flatpak remote-add --if-not-exists --system flathub https://dl.flathub.org/repo/flathub.flatpakrepo 2>/dev/null || true
 
+# Flatpak may fail in container build environment - continue on error
 flatpak install -y --system flathub \
     com.discordapp.Discord \
     com.spotify.Client \
@@ -326,15 +346,13 @@ flatpak install -y --system flathub \
     io.github.flattool.Warehouse \
     io.missioncenter.MissionCenter \
     com.github.wwmm.easyeffects \
-    org.freedesktop.Platform.ffmpeg-full//24.08 \
-    org.freedesktop.Platform.GL.nvidia-*/24.08 2>/dev/null || true
+    org.freedesktop.Platform.ffmpeg-full//24.08 2>/dev/null || echo "Warning: Some flatpak apps failed to install"
 
 # ──────────────────────────────────────────────
 # 12. CONFIGURAZIONI FINALI
 # ──────────────────────────────────────────────
 echo ">>> Applicazione configurazioni..."
 
-systemctl enable akmods.service 2>/dev/null || true
 usermod -aG gamemode root 2>/dev/null || true
 
 # ──────────────────────────────────────────────

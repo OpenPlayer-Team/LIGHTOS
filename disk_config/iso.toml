@@ -5,4 +5,4 @@
 [customizations]
 hostname = "lightos"
 
-# Keep installer interactive - DO NOT add kickstart for fully manual installation
+# Memtest86+ will be added to GRUB after install via /etc/grub.d/05memtest86+.cfg
