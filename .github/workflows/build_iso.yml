@@ -20,6 +20,11 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Install podman
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman
+
       - name: Build container image
         run: |
           docker system prune -af 2>/dev/null || true
@@ -30,18 +35,28 @@ jobs:
       - name: Create output directory
         run: mkdir -p output
 
+      - name: Initialize podman storage
+        run: |
+          sudo rm -rf /var/lib/containers/storage
+          sudo mkdir -p /var/lib/containers/storage
+          sudo mkdir -p /etc/containers
+          echo -e "[storage]\ndriver = \"overlay\"\nrunroot = \"/run/containers/storage\"\ngraphroot = \"/var/lib/containers/storage\"" | sudo tee /etc/containers/storage.conf
+
+      - name: Load image into podman
+        run: docker save lightos:iso-build | sudo podman load
+
       - name: Build ISO
         run: |
-          docker run --rm \
+          sudo podman run --rm \
             --privileged \
-            -v /var/run/docker.sock:/var/run/docker.sock \
+            --pull=newer \
             -v /var/lib/containers/storage:/var/lib/containers/storage \
             -v ${{ github.workspace }}/disk_config:/disk_config \
             -v ${{ github.workspace }}/output:/output \
             quay.io/centos-bootc/bootc-image-builder:latest \
             --type iso \
-            --local \
-            docker-daemon://lightos:iso-build
+            --log-level debug \
+            lightos:iso-build
 
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4

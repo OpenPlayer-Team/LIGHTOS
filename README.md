@@ -94,14 +94,16 @@ just clean
 
 ```bash
 # Build
-docker -H tcp://192.168.1.145:2375 build -t lightos:latest .
+docker build -t lightos:latest .
 
-# Build ISO
-docker -H tcp://192.168.1.145:2375 run --rm -it --privileged \
+# Build ISO (richiede podman)
+docker save lightos:latest | podman load
+podman run --rm --privileged \
     -v ./disk_config:/disk_config \
     -v ./output:/output \
+    -v /var/lib/containers/storage:/var/lib/containers/storage \
     quay.io/centos-bootc/bootc-image-builder:latest \
-    --type iso --local lightos:latest
+    --type iso lightos:latest
 ```
 
 ## Passa a LIGHTOS
@@ -113,11 +115,12 @@ sudo reboot
 
 ## Build automatiche
 
-Le GitHub Actions buildano e pubblicano automaticamente su GHCR ad ogni push su `main`.
+Le GitHub Actions buildano automaticamente l'immagine ISO ad ogni push su `main`.
+L'artifact ISO è disponibile nei risultati del workflow.
 
-Per generare immagini disco: `Actions > Build LIGHTOS Disk Image > Run workflow`.
+## Configurazione Docker remoto (Opzionale)
 
-## Configurazione Docker remoto
+Questa sezione è solo per chi preferisce fare build locali su un Docker daemon remoto. Non è necessario per la CI di GitHub Actions.
 
 Per esporre Docker su `192.168.1.145`, modifica `/etc/docker/daemon.json`:
 
@@ -148,17 +151,15 @@ sudo systemctl restart docker
 ```
 LIGHTOS/
 ├── .github/workflows/
-│   ├── build.yml          # CI/CD: build + push + signing
-│   └── build-disk.yml     # Build ISO/QCOW2/raw + S3 upload
+│   └── build_iso.yml        # Build ISO disk image
 ├── build_files/
-│   ├── build.sh           # Script principale di customizzazione
-│   └── etc/               # File di configurazione aggiuntivi
+│   └── build.sh             # Script principale di customizzazione
 ├── disk_config/
-│   └── iso.toml           # Config utente per disk images
-├── Containerfile          # Definizione immagine base
-├── Justfile               # Comandi di build
-├── cosign.pub             # Chiave pubblica per verifica
-├── artifacthub-repo.yml   # Artifact Hub integration
+│   └── iso.toml             # Config utente per disk images
+├── Containerfile            # Definizione immagine base
+├── Justfile                 # Comandi di build
+├── cosign.pub               # Chiave pubblica per verifica
+├── artifacthub-repo.yml     # Artifact Hub integration
 ├── LICENSE
 └── README.md
 ```
