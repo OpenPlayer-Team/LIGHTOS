@@ -1,8 +1,11 @@
 # LIGHTOS ISO disk configuration
-# Per build locale: docker build -t lightos:latest .
-# Per build ISO: just build-iso
+# For bootc-image-builder ISO generation
 
 [customizations]
 hostname = "lightos"
 
-# Memtest86+ will be added to GRUB after install via /etc/grub.d/05memtest86+.cfg
+[[customizations.user]]
+name = "user"
+password = ""
+key = ""
+groups = ["wheel"]
