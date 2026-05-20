@@ -30,12 +30,12 @@ jobs:
       - name: Create output directory
         run: mkdir -p output
 
-      - name: Build ISO
+- name: Build ISO
         run: |
           docker run --rm \
             --privileged \
             -v /var/run/docker.sock:/var/run/docker.sock \
-            -v /var/lib/containers:/var/lib/containers \
+            -v /var/lib/containers/storage:/var/lib/containers/storage \
             -v ${{ github.workspace }}/disk_config:/disk_config \
             -v ${{ github.workspace }}/output:/output \
             quay.io/centos-bootc/bootc-image-builder:latest \
