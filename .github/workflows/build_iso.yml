@@ -62,11 +62,13 @@ jobs:
             lightos:iso-build
 
       - name: List output files
-        run: ls -la output/
+        run: |
+          ls -la output/
+          find output/ -name "*.iso" -exec ls -la {} \;
 
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4
         with:
           name: lightos-iso
-          path: output/*.iso
+          path: output/**/*.iso
           retention-days: 7
