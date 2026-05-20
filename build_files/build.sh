@@ -306,9 +306,9 @@ done
 # Configure GRUB to include memtest86+
 grub2-mkconfig -o /boot/grub2/grub.cfg 2>/dev/null || true
 
-# Create buildstamp file for Anaconda installer (at root for dracut)
-BUILDSTAMP="/buildstamp"
-cat > "$BUILDSTAMP" << EOF
+# Create buildstamp file for Anaconda installer
+# osbuild-bootc expects buildstamp at /buildstamp in the image
+cat > /buildstamp << EOF
 {
   "buildtime": "$(date +%s)",
   "id": "lightos",
@@ -318,6 +318,11 @@ cat > "$BUILDSTAMP" << EOF
   "releasever": "42"
 }
 EOF
+chmod 644 /buildstamp
+
+# Also create in /usr/lib for dracut to find
+mkdir -p /usr/lib/dracut
+cp /buildstamp /usr/lib/dracut/buildstamp 2>/dev/null || true
 
 # ──────────────────────────────────────────────
 # 10. FONTS
