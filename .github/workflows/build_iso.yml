@@ -52,13 +52,11 @@ jobs:
             --pull=newer \
             -v /var/lib/containers/storage:/var/lib/containers/storage \
             -v ${{ github.workspace }}/disk_config:/disk_config \
-            -v ${{ github.workspace }}/disk_config/iso.toml:/config.toml \
             -v ${{ github.workspace }}/output:/output \
             quay.io/centos-bootc/bootc-image-builder:latest \
             --type iso \
             --rootfs xfs \
             --output /output \
-            --config /config.toml \
             lightos:iso-build
 
       - name: Upload ISO artifact

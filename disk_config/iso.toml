@@ -5,33 +5,4 @@
 [customizations]
 hostname = "lightos"
 
-# System locale settings
-installation_language = "en_US"
-keyboard_layout = "us"
-locale = "en_US.UTF-8"
-timezone = "Europe/Rome"
-
-# Auto-installation kickstart configuration
-[customizations.installer.kickstart]
-contents = """
-text --non-interactive
-lang en_US.UTF-8
-keyboard us
-timezone Europe/Rome
-
-network --bootproto=dhcp --device=link --activate --onboot=on
-
-zerombr
-clearpart --all --initlabel --disklabel=gpt
-autopart --noswap --type=lvm
-
-rootpw --lock
-
-reboot --eject
-"""
-
-[[customizations.user]]
-name = "user"
-password = "$6$rounds=4096$example$examplehashedpassword"
-key = ""
-groups = ["wheel"]
+# Keep installer interactive - DO NOT add kickstart for fully manual installation
