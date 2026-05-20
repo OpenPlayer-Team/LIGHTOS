@@ -306,6 +306,19 @@ done
 # Configure GRUB to include memtest86+
 grub2-mkconfig -o /boot/grub2/grub.cfg 2>/dev/null || true
 
+# Create buildstamp file for Anaconda installer
+BUILDSTAMP="/etc/buildstamp"
+cat > "$BUILDSTAMP" << EOF
+{
+  "buildtime": "$(date +%s)",
+  "id": "lightos",
+  "name": "LIGHTOS",
+  "version": "42",
+  "arch": "x86_64",
+  "releasever": "42"
+}
+EOF
+
 # ──────────────────────────────────────────────
 # 10. FONTS
 # ──────────────────────────────────────────────

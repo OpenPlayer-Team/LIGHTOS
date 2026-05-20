@@ -1,9 +1,6 @@
 # LIGHTOS ISO disk configuration
 # For bootc-image-builder ISO generation
 
-[customizations]
-hostname = "lightos"
-
 [[customizations.user]]
 name = "user"
 password = ""
