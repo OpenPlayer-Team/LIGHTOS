@@ -57,14 +57,7 @@ jobs:
             --type iso \
             --rootfs xfs \
             --output /output \
-            --log-level debug \
-            --chown $(id -u):$(id -g) \
             lightos:iso-build
-
-      - name: List output files
-        run: |
-          ls -la output/
-          find output/ -name "*.iso" -exec ls -la {} \;
 
       - name: Upload ISO artifact
         uses: actions/upload-artifact@v4
