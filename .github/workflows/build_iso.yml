@@ -56,6 +56,7 @@ jobs:
             quay.io/centos-bootc/bootc-image-builder:latest \
             --type iso \
             --rootfs xfs \
+            --output /output \
             --log-level debug \
             lightos:iso-build
 
