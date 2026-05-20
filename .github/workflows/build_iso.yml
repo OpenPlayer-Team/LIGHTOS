@@ -30,7 +30,7 @@ jobs:
       - name: Create output directory
         run: mkdir -p output
 
-- name: Build ISO
+      - name: Build ISO
         run: |
           docker run --rm \
             --privileged \
