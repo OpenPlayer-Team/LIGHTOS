@@ -3,6 +3,6 @@
 
 [[customizations.user]]
 name = "user"
-password = ""
+password = "1234"
 key = ""
 groups = ["wheel"]
