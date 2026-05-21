@@ -1,6 +1,46 @@
 #!/bin/bash
 set -euo pipefail
 
+# Function to run dnf with retry and timeout
+dnf_install() {
+    local max_retries=3
+    local timeout=300
+    local retries=0
+    
+    while [ $retries -lt $max_retries ]; do
+        if timeout $timeout dnf install -y "$@" 2>&1; then
+            return 0
+        else
+            retries=$((retries + 1))
+            echo "DNF install attempt $retries failed, retrying in 5 seconds..."
+            sleep 5
+        fi
+    done
+    
+    echo "DNF install failed after $max_retries attempts: $*"
+    return 1
+}
+
+# Function to run dnf makecache with retry and timeout
+dnf_makecache() {
+    local max_retries=3
+    local timeout=120
+    local retries=0
+    
+    while [ $retries -lt $max_retries ]; do
+        if timeout $timeout dnf makecache 2>&1; then
+            return 0
+        else
+            retries=$((retries + 1))
+            echo "DNF makecache attempt $retries failed, retrying in 5 seconds..."
+            sleep 5
+        fi
+    done
+    
+    echo "DNF makecache failed after $max_retries attempts"
+    return 1
+}
+
 # ============================================================
 # LIGHTOS - Build Script
 # Fedora Bootc 42 + Nvidia + Hyprland + Gaming + Dev + Multimedia
@@ -16,7 +56,7 @@ echo "========================================="
 echo ">>> Configurazione repository..."
 
 # RPM Fusion (free + nonfree)
-dnf install -y \
+dnf_install \
     https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm \
     https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
 
@@ -34,14 +74,14 @@ else
 fi
 
 # Aggiorna cache dopo nuovi repo
-dnf makecache
+dnf_makecache
 
 # ──────────────────────────────────────────────
 # 2. NVIDIA DRIVERS (proprietari)
 # ──────────────────────────────────────────────
 echo ">>> Installazione driver Nvidia..."
 
-dnf install -y \
+dnf_install \
     akmod-nvidia \
     xorg-x11-drv-nvidia \
     xorg-x11-drv-nvidia-cuda \
@@ -49,8 +89,14 @@ dnf install -y \
     xorg-x11-drv-nvidia-libs \
     nvidia-settings \
     nvidia-gpu-firmware \
-    nvidia-container-toolkit \
     nvidia-persistenced
+
+# Optional NVIDIA container toolkit: only install if available for this Fedora release.
+if dnf list nvidia-container-toolkit &>/dev/null; then
+    dnf_install nvidia-container-toolkit
+else
+    echo ">>> nvidia-container-toolkit not available on this Fedora release; skipping."
+fi
 
 # Enable nvidia-persistenced service (systemd link)
 [ -f "/usr/lib/systemd/system/nvidia-persistenced.service" ] && ln -sf "/usr/lib/systemd/system/nvidia-persistenced.service" "/etc/systemd/system/multi-user.target.wants/nvidia-persistenced.service" 2>/dev/null || true
@@ -60,7 +106,7 @@ dnf install -y \
 # ──────────────────────────────────────────────
 echo ">>> Installazione Hyprland e Tiling WM..."
 
-dnf install -y \
+dnf_install \
     hyprland \
     hyprpaper \
     hyprlock \
@@ -93,7 +139,7 @@ dnf install -y \
 # ──────────────────────────────────────────────
 echo ">>> Installazione pacchetti Gaming..."
 
-dnf install -y \
+dnf_install \
     steam \
     wine \
     wine-core \
@@ -120,7 +166,7 @@ dnf install -y \
 # ──────────────────────────────────────────────
 echo ">>> Installazione Development Tools..."
 
-dnf install -y \
+dnf_install \
     git \
     git-lfs \
     vim \
@@ -175,7 +221,7 @@ dnf install -y \
 # ──────────────────────────────────────────────
 echo ">>> Installazione Multimedia e Codecs..."
 
-dnf install -y \
+dnf_install \
     gstreamer1 \
     gstreamer1-plugins-base \
     gstreamer1-plugins-good \
@@ -218,7 +264,7 @@ dnf install -y \
 # ──────────────────────────────────────────────
 echo ">>> Installazione Produttività..."
 
-dnf install -y \
+dnf_install \
     libreoffice \
     libreoffice-langpack-it \
     thunderbird \
@@ -242,7 +288,7 @@ dnf install -y \
 # ──────────────────────────────────────────────
 echo ">>> Installazione Internet e Comunicazione..."
 
-dnf install -y \
+dnf_install \
     firefox \
     chromium \
     transmission \
@@ -254,7 +300,7 @@ dnf install -y \
 # ──────────────────────────────────────────────
 echo ">>> Installazione Sistema e Utilità..."
 
-dnf install -y \
+dnf_install \
      NetworkManager \
      NetworkManager-wifi \
      NetworkManager-bluetooth \
@@ -311,7 +357,7 @@ grub2-mkconfig -o /boot/grub2/grub.cfg 2>/dev/null || true
 # ──────────────────────────────────────────────
 echo ">>> Installazione Fonts..."
 
-dnf install -y \
+dnf_install \
     jetbrains-mono-fonts \
     fira-code-fonts \
     cascadia-code-fonts \
